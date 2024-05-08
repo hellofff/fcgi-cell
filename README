@@ -1,0 +1,52 @@
+
+1.Makefile使用说明
+    1）如果在src目录下增加了源码文件夹：
+        （1）需要手动新增源码文件源，参考“EASYLOGGER_SOURCES”。
+        （2）在总编译处，新增编译选项，参考“EASYLOGGER_SOURCES”。
+    2）添加新的库
+        （1）需要在LDFLAGS中新增库名称
+
+2.easylogger使用说明
+    修改默认log文件的大小，名称和位置，修改“include/easylogger/elog_file_cfg.h”
+    log文件名称定义“fcgi_*.log”,位置“/tmp/”。
+
+3.thirdparty
+    主要是使用的第三方库，需要单独编译，再移植到“include”和“lib”中。
+
+4.nginx：默认安装在/opt/nginx/，配置文件“/opt/nginx/conf/nginx.conf”。
+
+5.sqlite3：sudo apt-get install sqlite3 libsqlite3-dev
+    数据库：/opt/fnaiot/tsn-manage/tsn.db
+    表名称：LOGIN
+    表内容：ID INT PRIMARY KEY NOT NULL,TIME TEXT NOT NULL,USERNAME TEXT NOT NULL,PASSWD TEXT NOT NULL
+    示例：  1|2023-12-13 15:16|fnaiot|fnaiot@1234
+
+6.fcgi程序启动步骤
+    1）在nginx中添加配置文件，路径：/etc/nginx/sites-available/my_fast_cgi.conf。主要是在“http - server”添加fcgi程序对应的端口号
+        server
+{
+        listen 9000;
+        location /fcgi-cell{
+            fastcgi_pass 0.0.0.0:9005;
+            fastcgi_index fcgi-cell;
+            include fastcgi.conf;
+        }
+        location /fcgi-ethernet{
+            fastcgi_pass 0.0.0.0:9002;
+            fastcgi_index fcgi-ethernet;
+            include fastcgi.conf;
+        }
+}
+
+        然后重启nginx服务：sudo systemctl restart nginx
+    2）启动fcgi程序，端口号和程序名称要与nginx中配置的一样。运行程序前需要确保后台没有重复运行。
+        sudo /usr/bin/spawn-fcgi -a 0.0.0.0 -p 9005 -f ./fcgi-cell -n
+        注意：如果程序后台退出了，spawn-fcgi不会将程序重新拉起来，需要确保程序稳定。
+    3）访问地址：ip:9000/fcgi-cell
+        
+7.进程pid
+    程序运行后，会生产/var/run/*.pid，以程序名称定义的记录进程pid的文件。主要用于守护进程检测。
+
+8.版本更新
+    “src/version.h”中记录和更改版本信息。
+
